@@ -1,0 +1,48 @@
+{
+  "case_id": "DEMO003",
+  "parent_case_id": "RULE_DEMO003",
+  "split": "dev",
+  "origin": "人工教学示例",
+  "required_facts": [
+    {"fact_id": "F01", "text": "女性55岁，反复发作劳力性胸骨后压榨样疼痛1个月", "source_ids": ["S01"]},
+    {"fact_id": "F02", "text": "每次持续5-10分钟，休息后可自行缓解", "source_ids": ["S01"]},
+    {"fact_id": "F03", "text": "发作时无晕厥、黑矇或出冷汗", "source_ids": ["S01"]},
+    {"fact_id": "F04", "text": "原发性高血压3年，目前未规律监测血压", "source_ids": ["S02"]},
+    {"fact_id": "F05", "text": "血压145/92mmHg，心率76次/分，各瓣膜区未闻及病理性杂音", "source_ids": ["S03"]},
+    {"fact_id": "F06", "text": "心电图V4-V6 ST段轻度下移0.05mV伴T波低平", "source_ids": ["S04"]},
+    {"fact_id": "F07", "text": "肌钙蛋白I阴性（<0.02μg/L）", "source_ids": ["S04"]}
+  ],
+  "numeric_facts": [
+    {"concept": "收缩压", "value": "145", "unit": "mmHg", "source_ids": ["S03"]},
+    {"concept": "舒张压", "value": "92", "unit": "mmHg", "source_ids": ["S03"]},
+    {"concept": "心率", "value": "76", "unit": "次/分", "source_ids": ["S03"]},
+    {"concept": "ST段下移", "value": "0.05", "unit": "mV", "source_ids": ["S04"]},
+    {"concept": "肌钙蛋白I", "value": "0.02", "unit": "μg/L", "source_ids": ["S04"]}
+  ],
+  "negation_scope": [
+    "现有记录未见晕厥、黑矇或出冷汗，不等于排除高危冠状动脉病变",
+    "肌钙蛋白I阴性不等于排除急性冠脉综合征"
+  ],
+  "missing_items": [
+    "超声心动图结果",
+    "冠状动脉造影结果",
+    "血压监测记录",
+    "既往血脂与血糖结果"
+  ],
+  "forbidden_claims": [
+    "心电图正常或未见异常",
+    "已经确诊冠心病或急性冠脉综合征",
+    "已经完成超声心动图或冠状动脉造影",
+    "血压控制良好或已达标",
+    "胸痛已排除心源性"
+  ],
+  "review_targets": [
+    "心电图与肌钙蛋白的动态变化",
+    "冠状动脉造影与超声心动图结果",
+    "血压监测与心血管危险分层",
+    "胸痛性质与发作频率的进一步评估"
+  ],
+  "reviewer": "pending",
+  "clinical_review_status": "not_expert_reviewed",
+  "review_note": "教学示例清单，仅用于离线自测内容校验；不得作为评分金标准，未经过专科医师复核。"
+}

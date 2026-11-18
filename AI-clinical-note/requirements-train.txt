@@ -1,0 +1,10 @@
+# Training-track dependencies. main.py does NOT need these; install them only
+# in a separate environment if you actually want to run train/train_lora.py.
+torch>=2.4.0
+transformers>=4.45.0
+peft>=0.13.0
+accelerate>=1.0.0
+datasets>=3.0.0
+# QLoRA 4-bit kernels. bitsandbytes has no official Windows wheels; on Windows
+# train with --no-4bit (bf16 LoRA) or run in WSL/Linux.
+bitsandbytes>=0.44.0; platform_system == "Linux"
