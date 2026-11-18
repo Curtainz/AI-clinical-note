@@ -1,0 +1,11 @@
+.venv*/
+__pycache__/
+*.pyc
+.env
+input.json
+output.json
+output.json.tmp
+run_log.json
+validation_report.json
+artifacts/
+release/
