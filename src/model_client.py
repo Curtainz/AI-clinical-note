@@ -90,8 +90,13 @@ def call_model(
     generation_params: dict[str, Any] | None = None,
     timeout: tuple[int, int] = (10, 180),
     session: requests.Session | None = None,
+    user_content: str | None = None,
 ) -> dict[str, Any]:
     """Invoke the language model for a single case.
+
+    ``user_content`` overrides the default user message (the JSON case).  It is
+    used by the optional self-review pass, which sends the case together with
+    the draft record and the rule-checker findings.
 
     Returns an internal response dictionary:
       - content: parsed content string
@@ -113,7 +118,10 @@ def call_model(
         "model": cfg["MODEL_NAME"],
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": json.dumps(case, ensure_ascii=False)},
+            {
+                "role": "user",
+                "content": user_content if user_content is not None else json.dumps(case, ensure_ascii=False),
+            },
         ],
         "stream": False,
         **params,
