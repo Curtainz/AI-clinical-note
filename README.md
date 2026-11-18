@@ -1,11 +1,29 @@
-这是个人原型计划的起步材料，不是已经完成的参赛算法。
+已实现：将./input.json的内容读取，传入基于bionic的模型，获取./output.json
 
-已提供：配置模板、两版提示词、规则教学样例、核对要点、输出结构参考、数据标注模板，以及可运行的接口检查脚本。
+Bionic本地部署模型：qwen3-4b-instruct-2507
 
-尚待按照执行手册实现：main.py、批处理、正式输出与日志、校验器、评测及可选报告。当前没有安装模型，也没有在你的显卡上测量实际速度或医学效果。
+参数：  
+Automatic Optimize Based on Hardware  
+CPU Thread Pool Size: 8  
+         Temperature: 0.7  
+               Top K: 20  
+               Top P: 0.8  
+               Min P: 0  
+                Seed: 42  
 
-先阅读执行包根目录的《详细执行手册.md》，按D1配置本地模型并运行tools/probe_model.py。该脚本只使用Python标准库，不要求安装requests或python-dotenv。
+版本：  
+Bionic(LM Studio) == 1.2.1  
+python == 3.11.9  
 
-requires.txt当前仅列直接依赖，待创建干净Python 3.11环境、安装并验证后，按照手册锁定实际版本。
 
-模型的API标识应从实际服务查询，不能直接假定等于下载文件名。请只在本地回环地址使用无密钥服务设置。正式企业评测以赛方环境、指定模型、参数和调用限制为准。
+基础URL：http://localhost:1235/v1
+
+快速运行测试：
+```powershell
+Copy-Item -LiteralPath '.\examples\DEMO_THREE_CASES.input.json' -Destination '.\input.json'
+Copy-Item -LiteralPath '.\prompts\baseline.txt' -Destination '.\prompts\active.txt'
+& .\.venv\Scripts\python.exe .\main.py
+```
+
+尚待实现：训练、输出校验。
+
