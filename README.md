@@ -2,7 +2,8 @@
 
 Bionic本地部署模型：qwen3-4b-instruct-2507
 
-配置：Automatic Optimize Based on Hardware  
+参数：  
+Automatic Optimize Based on Hardware  
 CPU Thread Pool Size: 8  
          Temperature: 0.7  
                Top K: 20  
