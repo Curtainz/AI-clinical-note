@@ -11,6 +11,11 @@ CPU Thread Pool Size: 8
                Min P: 0  
                 Seed: 42  
 
+版本：  
+Bionic(LM Studio) == 1.2.1  
+python == 3.11.9  
+
+
 基础URL：http://localhost:1235/v1
 
 快速运行测试：
