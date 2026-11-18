@@ -1,7 +1,22 @@
-这是个人原型计划的起步材料，不是已经完成的参赛算法。
+已实现：将./input.json的内容读取，传入基于bionic的模型，获取./output.json
+
+Bionic本地部署模型：qwen3-4b-instruct-2507
+
+配置：Automatic Optimize Based on Hardware
+CPU Thread Pool Size: 8
+         Temperature: 0.7
+               Top K: 20
+               Top P: 0.8
+               Min P: 0
+                Seed: 42
+
+基础URL：http://localhost:1235/v1
+
+当./input.json存在时，快速运行：
+```powershell
+Copy-Item -LiteralPath '.\prompts\baseline.txt' -Destination '.\prompts\active.txt'
+& .\.venv\Scripts\python.exe .\main.py
+```
 
 尚待实现：训练、输出校验。
 
-当前没有内置模型，也没有在显卡上测量实际速度或医学效果。
-
-模型的API标识应从实际服务查询，不能直接假定等于下载文件名。请只在本地回环地址使用无密钥服务设置。正式企业评测以赛方环境、指定模型、参数和调用限制为准。
