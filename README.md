@@ -12,8 +12,9 @@ CPU Thread Pool Size: 8
 
 基础URL：http://localhost:1235/v1
 
-当./input.json存在时，快速运行：
+快速运行测试：
 ```powershell
+Copy-Item -LiteralPath '.\examples\DEMO_THREE_CASES.input.json' -Destination '.\input.json'
 Copy-Item -LiteralPath '.\prompts\baseline.txt' -Destination '.\prompts\active.txt'
 & .\.venv\Scripts\python.exe .\main.py
 ```
