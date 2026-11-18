@@ -253,5 +253,122 @@ class TestMainIsolatedScenarios(IsolatedProjectTestCase):
         self.assertEqual(real_files_before, real_files_after)
 
 
+class TestContentCheckIntegration(IsolatedProjectTestCase):
+    """Integration tests for the content-level validation stage in main.py."""
+
+    def _valid_record(self, **overrides) -> dict:
+        record = {
+            "case_features": "患者乏力2周，活动后心悸；查体见结膜苍白，血压及尿量未提供。血红蛋白82g/L（标低）。",
+            "diagnostic_discussion": "考虑贫血，原因待查；肾功能情况需结合未提供的既往肌酐判断。",
+            "plan": "拟完善血常规、铁代谢及肾功能复查，拟监测血压与尿量，建议血液科会诊。",
+            "evidence": [{"statement": "血红蛋白82g/L（标低）", "source_ids": ["S01"], "kind": "fact"}],
+            "review_items": ["血压与尿量未提供，需补测", "既往肌酐未提供，需追问"],
+        }
+        record.update(overrides)
+        return record
+
+    def _write_checklist(self, case_id: str, **overrides) -> None:
+        checklist = {
+            "case_id": case_id,
+            "required_facts": [{"fact_id": "F01", "text": "乏力2周活动后心悸", "source_ids": ["S01"]}],
+            "numeric_facts": [{"concept": "血红蛋白", "value": 82, "unit": "g/L", "source_ids": ["S01"]}],
+            "negation_scope": [],
+            "missing_items": ["血压", "尿量"],
+            "forbidden_claims": ["血压正常或尿量正常"],
+            "review_targets": ["血压与尿量"],
+            "split": "dev",
+            "origin": "unit-test",
+            "clinical_review_status": "not_expert_reviewed",
+        }
+        checklist.update(overrides)
+        (self.project_dir / "checklists").mkdir(parents=True, exist_ok=True)
+        (self.project_dir / "checklists" / f"{case_id}.checklist.json").write_text(
+            json.dumps(checklist, ensure_ascii=False), encoding="utf-8"
+        )
+
+    def _run_with_record(self, record: dict, case_id: str = "CASE01") -> int:
+        case = {
+            "case_id": case_id,
+            "record_cutoff": "T0",
+            "sources": [{"source_id": "S01", "content": "乏力2周，活动后心悸；血红蛋白82g/L（标低）；未提供血压、尿量。"}],
+        }
+        self.create_input([case])
+        mock_response = {
+            "content": json.dumps(record, ensure_ascii=False),
+            "finish_reason": "stop",
+            "usage": None,
+            "elapsed_seconds": 0.2,
+            "model_name": "mock-model",
+            "http_status": 200,
+            "raw_response": json.dumps(record, ensure_ascii=False),
+        }
+        with patch("main.call_model", return_value=mock_response):
+            return main.main(base_dir=self.project_dir)
+
+    def test_content_check_written_to_reports(self):
+        self._write_checklist("CASE01")
+        exit_code = self._run_with_record(self._valid_record())
+        self.assertEqual(exit_code, 0)
+
+        validation = json.loads((self.project_dir / "validation_report.json").read_text(encoding="utf-8"))
+        case_report = validation["cases"][0]
+        self.assertTrue(case_report["protocol_valid"])
+        self.assertIsNotNone(case_report["content_check"])
+        self.assertIsInstance(case_report["content_check"]["score"], int)
+
+        run_log = json.loads((self.project_dir / "run_log.json").read_text(encoding="utf-8"))
+        self.assertEqual(run_log["content_summary"]["checked_cases"], 1)
+        self.assertEqual(run_log["case_runs"][0]["status"], "success")
+        self.assertIn("content_score", run_log["case_runs"][0])
+        self.assertEqual(run_log["checklist_errors"], [])
+        self.assertTrue(run_log["case_runs"][0]["checklist_path"].endswith("CASE01.checklist.json"))
+
+    def test_content_problems_do_not_fail_the_run(self):
+        self._write_checklist("CASE01")
+        bad_record = self._valid_record(case_features="患者乏力2周；血压正常，尿量正常。")
+        exit_code = self._run_with_record(bad_record)
+        self.assertEqual(exit_code, 0)
+
+        output = json.loads((self.project_dir / "output.json").read_text(encoding="utf-8"))
+        self.assertEqual(output[0]["status"], "success")
+
+        run_log = json.loads((self.project_dir / "run_log.json").read_text(encoding="utf-8"))
+        case_run = run_log["case_runs"][0]
+        self.assertFalse(case_run["content_passed"])
+        self.assertIn("NEGATION_REWRITTEN", case_run["content_issues_by_code"])
+
+    def test_checklist_facts_are_enforced(self):
+        self._write_checklist(
+            "CASE01",
+            required_facts=[{"fact_id": "F01", "text": "患者有糖尿病病史10年", "source_ids": ["S01"]}],
+        )
+        exit_code = self._run_with_record(self._valid_record())
+        self.assertEqual(exit_code, 0)
+
+        validation = json.loads((self.project_dir / "validation_report.json").read_text(encoding="utf-8"))
+        codes = {issue["code"] for issue in validation["cases"][0]["content_check"]["issues"]}
+        self.assertIn("CHECKLIST_FACT_MISSING", codes)
+
+    def test_broken_checklist_is_non_fatal(self):
+        (self.project_dir / "checklists").mkdir(parents=True, exist_ok=True)
+        (self.project_dir / "checklists" / "CASE01.checklist.json").write_text(
+            json.dumps({"case_id": "CASE01", "required_facts": "not-a-list"}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        exit_code = self._run_with_record(self._valid_record())
+        self.assertEqual(exit_code, 0)
+
+        run_log = json.loads((self.project_dir / "run_log.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(run_log["checklist_errors"]), 1)
+        self.assertEqual(run_log["checklist_errors"][0]["case_id"], "CASE01")
+        self.assertIn("checklist_error", run_log["case_runs"][0])
+        # The case still runs and its content check still happens without the checklist.
+        output = json.loads((self.project_dir / "output.json").read_text(encoding="utf-8"))
+        self.assertEqual(output[0]["status"], "success")
+        validation = json.loads((self.project_dir / "validation_report.json").read_text(encoding="utf-8"))
+        self.assertIsNotNone(validation["cases"][0]["content_check"])
+        self.assertIsNone(validation["cases"][0]["content_check"]["checklist"])
+
+
 if __name__ == "__main__":
     unittest.main()
